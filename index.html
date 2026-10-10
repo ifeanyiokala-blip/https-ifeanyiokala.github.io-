@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ifeanyi Tony Okala — GIS Specialist</title>
+<meta name="description" content="Portfolio of Ifeanyi Tony Okala, GIS Specialist. Cartography, spatial analysis, and data quality control." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+  :root{
+    --bg:#070b14; --panel:#0d1424; --panel2:#111a2e;
+    --line:rgba(148,178,255,.12);
+    --text:#e9eef7; --muted:#9aa7bd;
+    --teal:#5eead4; --teal-dim:rgba(94,234,212,.14);
+    --radius:14px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;line-height:1.6;overflow-x:hidden}
+  h1,h2,h3,.brand{font-family:'Space Grotesk',sans-serif}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:1140px;margin:0 auto;padding:0 24px}
+  section{padding:96px 0}
+  .kicker{color:var(--teal);text-transform:uppercase;letter-spacing:.22em;font-size:.78rem;font-weight:600;margin-bottom:14px}
+  h2.sec{font-size:clamp(1.7rem,3.4vw,2.4rem);margin-bottom:10px}
+  .sec-sub{color:var(--muted);max-width:640px;margin-bottom:48px}
+
+  /* NAV */
+  nav{position:fixed;inset:0 0 auto 0;z-index:1000;backdrop-filter:blur(14px);
+    background:rgba(7,11,20,.72);border-bottom:1px solid var(--line)}
+  .nav-in{max-width:1140px;margin:0 auto;padding:14px 24px;display:flex;align-items:center;justify-content:space-between}
+  .brand{font-weight:700;font-size:1.05rem;letter-spacing:.04em;color:var(--teal)}
+  .brand small{color:var(--muted);font-weight:500}
+  .links{display:flex;gap:28px;align-items:center}
+  .links a{color:var(--muted);font-size:.95rem;transition:color .2s}
+  .links a:hover{color:var(--teal)}
+  .btn{display:inline-block;background:var(--teal);color:#06251f;font-weight:600;padding:10px 22px;border-radius:999px;font-size:.95rem;transition:transform .15s,box-shadow .15s}
+  .btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(94,234,212,.35)}
+  .btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+  .btn.ghost:hover{border-color:var(--teal);color:var(--teal);box-shadow:none}
+  .burger{display:none;background:none;border:0;color:var(--text);font-size:1.6rem;cursor:pointer}
+  @media(max-width:760px){
+    .links{position:fixed;top:60px;right:0;left:0;flex-direction:column;background:#0a0f1c;border-bottom:1px solid var(--line);padding:20px;display:none}
+    .links.open{display:flex}
+    .burger{display:block}
+  }
+
+  /* HERO */
+  .hero{position:relative;min-height:100svh;display:flex;align-items:center;justify-content:center;text-align:center;overflow:hidden;padding:120px 24px 80px}
+  #map{position:absolute;inset:0;z-index:0;background:radial-gradient(ellipse at 50% 40%,#0c1830 0%,#070b14 70%)}
+  .hero::after{content:"";position:absolute;inset:0;z-index:1;
+    background:radial-gradient(ellipse at center,rgba(7,11,20,.25) 0%,rgba(7,11,20,.88) 78%)}
+  .hero-in{position:relative;z-index:2;max-width:860px}
+  .hero h1{font-size:clamp(2.6rem,7vw,4.8rem);line-height:1.05;letter-spacing:-.02em;margin-bottom:16px}
+  .hero .tag{color:var(--teal);font-size:clamp(1rem,2.4vw,1.35rem);font-weight:500;margin-bottom:14px}
+  .hero p.lead{color:var(--muted);max-width:620px;margin:0 auto 34px;font-size:1.05rem}
+  .hero-cta{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+  .leaflet-container{font-family:inherit}
+  .pin-label{background:rgba(7,11,20,.85);border:1px solid var(--line);color:var(--teal);
+    font-size:11px;padding:3px 9px;border-radius:999px;font-family:'Inter',sans-serif;white-space:nowrap}
+  .leaflet-tooltip-top.pin-label::before{display:none}
+  .scroll-hint{position:absolute;bottom:26px;left:50%;transform:translateX(-50%);z-index:2;color:var(--muted);font-size:.8rem;letter-spacing:.2em;text-transform:uppercase;animation:bob 2.2s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translate(-50%,0)}50%{transform:translate(-50%,8px)}}
+
+  /* STATS */
+  .stats{border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--panel)}
+  .stats .wrap{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding-top:44px;padding-bottom:44px}
+  .stat{text-align:center}
+  .stat b{display:block;font-family:'Space Grotesk';font-size:clamp(1.6rem,3.4vw,2.4rem);color:var(--teal)}
+  .stat span{color:var(--muted);font-size:.9rem}
+  @media(max-width:640px){.stats .wrap{grid-template-columns:repeat(2,1fr);gap:28px}}
+
+  /* PROJECTS */
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:22px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;transition:transform .2s,border-color .2s}
+  .card:hover{transform:translateY(-6px);border-color:rgba(94,234,212,.45)}
+  .card img{width:100%;height:190px;object-fit:cover;display:block}
+  .card-body{padding:22px}
+  .card-body h3{font-size:1.15rem;margin-bottom:8px}
+  .card-body p{color:var(--muted);font-size:.93rem;margin-bottom:14px}
+  .tags{display:flex;flex-wrap:wrap;gap:8px}
+  .tags span{font-size:.75rem;background:var(--teal-dim);color:var(--teal);padding:4px 11px;border-radius:999px;font-weight:500}
+
+  /* EXPERIENCE */
+  .exp{background:var(--panel);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .job{border-left:2px solid var(--line);padding:0 0 38px 28px;position:relative;margin-left:8px}
+  .job:last-child{padding-bottom:0}
+  .job::before{content:"";position:absolute;left:-8px;top:4px;width:14px;height:14px;border-radius:50%;background:var(--teal);box-shadow:0 0 14px rgba(94,234,212,.8)}
+  .job .when{color:var(--teal);font-size:.82rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+  .job h3{font-size:1.2rem;margin:6px 0 2px}
+  .job .where{color:var(--muted);font-size:.92rem;margin-bottom:10px}
+  .job ul{margin-left:18px;color:var(--muted);font-size:.94rem}
+  .job li{margin-bottom:6px}
+
+  /* SKILLS */
+  .skill-groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:22px}
+  .sgroup{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:24px}
+  .sgroup h3{font-size:1rem;color:var(--teal);margin-bottom:14px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chips span{font-size:.83rem;border:1px solid var(--line);border-radius:999px;padding:5px 13px;color:var(--muted)}
+
+  /* ABOUT */
+  .about-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:44px;align-items:start}
+  @media(max-width:820px){.about-grid{grid-template-columns:1fr}}
+  .about-grid p{color:var(--muted);margin-bottom:16px}
+  .edu{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:26px}
+  .edu h3{margin-bottom:16px;font-size:1.05rem}
+  .edu div{margin-bottom:14px}
+  .edu b{display:block;font-size:.95rem}
+  .edu span{color:var(--muted);font-size:.85rem}
+
+  /* CONTACT */
+  .contact{text-align:center;background:radial-gradient(ellipse at 50% 120%,rgba(94,234,212,.12),transparent 60%)}
+  .contact h2{font-size:clamp(1.8rem,4vw,2.6rem);margin-bottom:12px}
+  .contact p{color:var(--muted);max-width:520px;margin:0 auto 30px}
+  .contact-row{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+
+  footer{border-top:1px solid var(--line);padding:28px 0;color:var(--muted);font-size:.85rem}
+  footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}
+
+  .reveal{opacity:0;transform:translateY(26px);transition:opacity .7s ease,transform .7s ease}
+  .reveal.in{opacity:1;transform:none}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-in">
+    <a class="brand" href="#top">IF·OKALA <small>GIS</small></a>
+    <button class="burger" id="burger" aria-label="Menu">☰</button>
+    <div class="links" id="navlinks">
+      <a href="#projects">Projects</a>
+      <a href="#experience">Experience</a>
+      <a href="#skills">Skills</a>
+      <a href="#about">About</a>
+      <a href="#contact">Contact</a>
+      <a class="btn" href="assets/Ifeanyi_Okala_Resume.pdf" download>Download CV</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div id="map"></div>
+  <div class="hero-in">
+    <h1>Ifeanyi Tony Okala</h1>
+    <div class="tag">GIS Specialist · Cartography, Spatial Analysis &amp; Data QC</div>
+    <p class="lead">10+ years turning spatial data into decisions — from flood-risk mapping and transportation planning to dashboards that cut reporting time by 25%.</p>
+    <div class="hero-cta">
+      <a class="btn" href="#projects">View Projects →</a>
+      <a class="btn ghost" href="#contact">Contact Me</a>
+    </div>
+  </div>
+  <div class="scroll-hint">Scroll</div>
+</header>
+
+<div class="stats">
+  <div class="wrap">
+    <div class="stat reveal"><b><span class="count" data-to="10">0</span>+</b><span>Years in GIS &amp; Planning</span></div>
+    <div class="stat reveal"><b><span class="count" data-to="98">0</span>%+</b><span>Data Accuracy Sustained</span></div>
+    <div class="stat reveal"><b><span class="count" data-to="1000">0</span>+</b><span>Datasets Managed &amp; QC'd</span></div>
+    <div class="stat reveal"><b><span class="count" data-to="25">0</span>%</b><span>Faster Reporting via Dashboards</span></div>
+  </div>
+</div>
+
+<section id="projects">
+  <div class="wrap">
+    <div class="kicker">Selected Work</div>
+    <h2 class="sec">Projects</h2>
+    <p class="sec-sub">A sample of mapping and analysis work — from flood-risk modeling to statewide master planning.</p>
+    <div class="grid">
+      <article class="card reveal">
+        <img src="assets/flood-map.webp" alt="Flood-risk map" />
+        <div class="card-body">
+          <h3>Flood-Prone Area Mapping</h3>
+          <p>Identified at-risk structures in Ifite Awka by overlaying flood patterns with building footprints — supporting risk awareness and mitigation planning.</p>
+          <div class="tags"><span>Spatial Analysis</span><span>QGIS</span><span>Risk Modeling</span></div>
+        </div>
+      </article>
+      <article class="card reveal">
+        <img src="assets/transport-map.webp" alt="Transportation network map" />
+        <div class="card-body">
+          <h3>Transportation Planning</h3>
+          <p>Classified road networks by functional hierarchy to assess circulation, accessibility, and connectivity for infrastructure planning.</p>
+          <div class="tags"><span>Network Analysis</span><span>ArcGIS Pro</span><span>Geoprocessing</span></div>
+        </div>
+      </article>
+      <article class="card reveal">
+        <img src="assets/landuse-map.webp" alt="Land-use classification map" />
+        <div class="card-body">
+          <h3>Land-Use &amp; Master Planning</h3>
+          <p>Composite and preliminary land-use maps for the Anambra State Master Plan — including 10,000+ digitized building footprints.</p>
+          <div class="tags"><span>Cartography</span><span>ArcGIS</span><span>Digitizing</span></div>
+        </div>
+      </article>
+      <article class="card reveal">
+        <img src="assets/dem-terrain.webp" alt="Digital elevation model terrain" />
+        <div class="card-body">
+          <h3>Digital Elevation Models</h3>
+          <p>DEM processing and terrain analysis to support planning decisions across varied landscapes.</p>
+          <div class="tags"><span>DEM</span><span>Terrain Analysis</span><span>QGIS</span></div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="exp" id="experience">
+  <div class="wrap">
+    <div class="kicker">Career</div>
+    <h2 class="sec">Experience</h2>
+    <p class="sec-sub">A decade of GIS, planning, and data operations across government, nonprofit, and private sectors.</p>
+
+    <div class="job reveal">
+      <div class="when">Mar 2023 – Present</div>
+      <h3>GIS Analyst / Data Operations Manager</h3>
+      <div class="where">Opendoor Community Support Services · Los Angeles, CA</div>
+      <ul>
+        <li>Analyze service-area coverage with spatial modeling, improving field resource allocation efficiency by 20%.</li>
+        <li>Direct QC for 1,000+ spatial and operational records, sustaining 98%+ accuracy.</li>
+        <li>Design GIS dashboards and automated reporting tools, cutting reporting turnaround time by 25%.</li>
+      </ul>
+    </div>
+
+    <div class="job reveal">
+      <div class="when">Jan 2026 – Apr 2026</div>
+      <h3>Cartographer &amp; Photogrammetrist (AI Contractor)</h3>
+      <div class="where">Mercor · Remote</div>
+      <ul>
+        <li>Validated AI-generated spatial outputs against ground-truth GIS data for large-scale geospatial datasets.</li>
+        <li>Documented structured QC findings to improve geospatial model reliability.</li>
+      </ul>
+    </div>
+
+    <div class="job reveal">
+      <div class="when">Oct 2023 – Mar 2024</div>
+      <h3>GIS Analyst</h3>
+      <div class="where">Chico State Enterprise · Chico, CA</div>
+      <ul>
+        <li>Maintained GIS datasets across 11 counties for regional planning initiatives.</li>
+        <li>Converted 300+ legacy datasets into GIS-ready formats; performed transportation and land-use analyses.</li>
+      </ul>
+    </div>
+
+    <div class="job reveal">
+      <div class="when">2014 – 2023</div>
+      <h3>Urban Planner / GIS Analyst</h3>
+      <div class="where">Awka Capital Territory Development Authority · Nigeria</div>
+      <ul>
+        <li>Led GIS analysis for the Anambra State Master Plan — land use, transportation, infrastructure, and demographics.</li>
+        <li>Digitized 10,000+ building footprints and integrated parcel, road, and land-use datasets.</li>
+        <li>Conducted field GPS data collection and CAD-to-GIS integration for development projects.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="skills">
+  <div class="wrap">
+    <div class="kicker">Toolbox</div>
+    <h2 class="sec">Skills</h2>
+    <p class="sec-sub">Software, analysis methods, and workflows honed over 10+ years.</p>
+    <div class="skill-groups">
+      <div class="sgroup reveal">
+        <h3>GIS Software</h3>
+        <div class="chips"><span>ArcGIS Pro</span><span>ArcGIS Desktop</span><span>ArcGIS Online</span><span>ArcMap</span><span>QGIS</span><span>Google Earth</span></div>
+      </div>
+      <div class="sgroup reveal">
+        <h3>Spatial Analysis</h3>
+        <div class="chips"><span>Spatial Modeling</span><span>Geoprocessing</span><span>Geocoding</span><span>Overlay Analysis</span><span>Network Analysis</span><span>Suitability Modeling</span></div>
+      </div>
+      <div class="sgroup reveal">
+        <h3>Cartography &amp; Viz</h3>
+        <div class="chips"><span>Map Production</span><span>Cartographic Design</span><span>Dashboards</span><span>Tableau</span><span>Power BI</span></div>
+      </div>
+      <div class="sgroup reveal">
+        <h3>Data Management</h3>
+        <div class="chips"><span>Geodatabases</span><span>Data Quality Control</span><span>Metadata</span><span>Data Cleaning</span><span>Excel (Advanced)</span></div>
+      </div>
+      <div class="sgroup reveal">
+        <h3>Field &amp; CAD</h3>
+        <div class="chips"><span>GPS Field Collection</span><span>CAD Interpretation</span><span>CAD-to-GIS Integration</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="about" style="padding-top:0">
+  <div class="wrap">
+    <div class="kicker">About</div>
+    <h2 class="sec">Behind the maps</h2>
+    <div class="about-grid" style="margin-top:32px">
+      <div class="reveal">
+        <p>I'm a GIS professional with 10+ years of experience using ESRI ArcGIS and QGIS to visualize, analyze, and manage spatial data for planning, infrastructure, and operational projects.</p>
+        <p>My work has supported government agencies, nonprofits, and private-sector teams — from producing cartographic products for stakeholder presentations to building dashboards and automated reporting tools. I'm known for rigorous data quality control, consistently maintaining 98%+ accuracy across large datasets.</p>
+        <p>Based in Lawndale, California. Open to remote collaborations and new opportunities.</p>
+      </div>
+      <div class="edu reveal">
+        <h3>Education</h3>
+        <div><b>M.S., Information Science</b><span>Trine University · 2023 – 2025</span></div>
+        <div><b>M.S., Organizational Psychology</b><span>University of South Wales · 2021 – 2022</span></div>
+        <div><b>B.S., Urban &amp; Regional Planning</b><span>Enugu State University of Science and Technology · 2007 – 2012</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="contact" id="contact">
+  <div class="wrap reveal">
+    <div class="kicker" style="text-align:center">Get in touch</div>
+    <h2>Let's work together</h2>
+    <p>Have a mapping challenge, a dataset that needs wrangling, or a planning question? My inbox is open.</p>
+    <div class="contact-row">
+      <a class="btn" href="mailto:ifeanyiokala@gmail.com">ifeanyiokala@gmail.com</a>
+      <a class="btn ghost" href="https://www.linkedin.com/" target="_blank" rel="noopener">LinkedIn</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 Ifeanyi Tony Okala · Lawndale, CA</span>
+    <span>Built with GitHub Pages</span>
+  </div>
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  // Hero map — dark CARTO tiles, non-interactive backdrop
+  (function(){
+    try{
+      var map = L.map('map',{zoomControl:false,attributionControl:true,
+        dragging:false,scrollWheelZoom:false,doubleClickZoom:false,
+        boxZoom:false,keyboard:false,tap:false,touchZoom:false}).setView([22,-28],2);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+        {maxZoom:19,attribution:'© OpenStreetMap · © CARTO'}).addTo(map);
+      var pins=[[34.05,-118.25,'Los Angeles, CA'],[39.73,-121.84,'Chico, CA'],[6.21,7.07,'Awka, Nigeria']];
+      pins.forEach(function(p){
+        L.circleMarker(p.slice(0,2),{radius:7,color:'#5eead4',weight:2,fillColor:'#5eead4',fillOpacity:.85})
+          .bindTooltip(p[2],{direction:'top',offset:[0,-10],className:'pin-label',opacity:1}).addTo(map);
+      });
+    }catch(e){/* hero gradient remains as fallback */}
+  })();
+
+  // Animated counters
+  (function(){
+    var els=document.querySelectorAll('.count');
+    var io=new IntersectionObserver(function(es){
+      es.forEach(function(e){
+        if(!e.isIntersecting)return;
+        var el=e.target,to=+el.dataset.to,t0=null;
+        function tick(t){ if(!t0)t0=t; var p=Math.min((t-t0)/1400,1);
+          el.textContent=Math.round(to*(1-Math.pow(1-p,3))).toLocaleString();
+          if(p<1)requestAnimationFrame(tick); }
+        requestAnimationFrame(tick); io.unobserve(el);
+      });
+    },{threshold:.5});
+    els.forEach(function(el){io.observe(el)});
+  })();
+
+  // Scroll reveal
+  (function(){
+    var els=document.querySelectorAll('.reveal');
+    var io=new IntersectionObserver(function(es){
+      es.forEach(function(e){ if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);} });
+    },{threshold:.12});
+    els.forEach(function(el){io.observe(el)});
+  })();
+
+  // Mobile nav
+  document.getElementById('burger').addEventListener('click',function(){
+    document.getElementById('navlinks').classList.toggle('open');
+  });
+  document.querySelectorAll('#navlinks a').forEach(function(a){
+    a.addEventListener('click',function(){document.getElementById('navlinks').classList.remove('open')});
+  });
+</script>
+</body>
+</html>
